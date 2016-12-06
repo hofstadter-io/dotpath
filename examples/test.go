@@ -1,0 +1,103 @@
+package main
+
+import (
+	"fmt"
+	"github.com/pkg/errors"
+	"io/ioutil"
+
+	"github.com/kr/pretty"
+	"gopkg.in/yaml.v1"
+
+	"github.ibm.com/hofstadter-io/dotpath"
+)
+
+func main() {
+	fmt.Println("dotpath test\n----------------\n")
+
+	//	dotpath.SetLogLevel("debug")
+
+	test_yaml()
+
+}
+
+func test_json() error {
+
+	return nil
+}
+
+func test_yaml() {
+	fmt.Println("Testing yaml")
+
+	data, err := read_yaml("data/test.yaml")
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	fmt.Printf("data:\n%# v\n\n", pretty.Formatter(data))
+
+	paths := []string{
+		"data.key",
+		"data.array",
+		"data.array.elemA",
+		"data.array.[elemA]",
+		"data.array.[elemA,elemB]",
+		"data.array.[name==elemB]",
+		"data.array.[name==elemB,elemC]",
+		"data.array.[value==foo]",
+		"data.array.[value==foo,goo]",
+		"data.object",
+		"data.object.name",
+		"data.object.myobject",
+		"data.object.field1",
+		"data.object.[name]",
+		"data.object.[field1]",
+		"data.object.[name,field1]",
+		"data.object.[name,field1,field2]",
+		"data.object.list",
+		"data.object.list.u",
+		"data.object.list.x",
+		"data.object.list.[:2]",
+		"data.object.list.[2]",
+		"data.object.list.2",
+		"data.object.list.[2:]",
+		"data.object.list.[:]",
+		"data.object.list.[value==0]",
+		"data.object.list.[value!=0]",
+		"data.object.list.[value>0]",
+		"data.object.list.[value>=0]",
+		"data.object.list.[value<0]",
+		"data.object.list.[value<=0]",
+	}
+
+	for _, path := range paths {
+
+		fmt.Printf("@%s:\n", path)
+		d, err := dotpath.Get(path, data)
+		if err != nil {
+			fmt.Println("ERROR:", err, "\n\n")
+			continue
+		}
+		fmt.Printf("%# v\n\n", pretty.Formatter(d))
+	}
+
+}
+
+func test_struct() error {
+
+	return nil
+}
+
+func read_yaml(filename string) (interface{}, error) {
+
+	data, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while reading yaml file: (readfile) %s\n", filename)
+	}
+
+	obj := map[string]interface{}{}
+	err = yaml.Unmarshal(data, &obj)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while reading yaml file: (unmarshal) %s\n", filename)
+	}
+
+	return obj, nil
+}
