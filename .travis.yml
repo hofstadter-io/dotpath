@@ -7,6 +7,5 @@ go:
 install: true
 
 script:
-  - cd cli/golang and go build -o slog main.go
-
+  - cd examples && go run test.go
 
