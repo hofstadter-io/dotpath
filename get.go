@@ -61,12 +61,12 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 	logger.Info(header)
 
 	P := paths[IDX]
-	path_str := strings.Join(paths[:IDX+1], ".")
 
-	has_indexing := strings.Contains(P, "[")
-	has_slicing := strings.Contains(P, ":")
+	lpos_index := strings.Index(P, "[")
+	rpos_index := strings.LastIndex(P, "]")
+	pos_colon := strings.Index(P, ":")
 	has_listing := strings.Contains(P, ",")
-	has_regex := strings.Contains(P, "regex")
+	pos_regex := strings.Index(P, "regex")
 
 	has_eq := strings.Contains(P, "==")
 	has_ne := strings.Contains(P, "!=")
@@ -75,151 +75,61 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 	has_le := strings.Contains(P, "<=")
 	has_lt := strings.Contains(P, "<")
 
-	if has_indexing || has_slicing || has_listing || has_regex {
-		logger.Info("Has: ", "idx", IDX, "curr", P, "paths", paths,
-			"indexing", has_indexing, "slicing", has_regex,
-			"listing", has_listing, "select", has_regex,
-		)
-	}
+	logger.Info("Has: ", "idx", IDX, "curr", P, "paths", paths,
+		"lpos", lpos_index, "rpos", rpos_index, "slicing", pos_colon,
+		"listing", has_listing, "regex", pos_regex,
+	)
+	logger.Info("has bool",
+		"has_eq", has_eq, "has_ne", has_ne,
+		"has_ge", has_ge, "has_gt", has_gt,
+		"has_le", has_le, "has_lt", has_lt,
+	)
 
-	if has_eq || has_ne || has_ge || has_gt || has_le || has_lt {
-		logger.Info("has bool",
-			"has_eq", has_eq, "has_ne", has_ne,
-			"has_ge", has_ge, "has_gt", has_gt,
-			"has_le", has_le, "has_lt", has_lt,
-		)
+	inner := ""
+	if lpos_index > -1 {
+		inner = P[lpos_index+1 : rpos_index]
 	}
+	fmt.Printf("inner: %d %q %q\n", IDX, inner, P)
 
 	switch T := data.(type) {
 
 	case map[string]interface{}:
-		val, ok := T[P]
-		if !ok {
-			// try to look up by name
-			name_value, ok := T["name"]
-			if ok && name_value == P {
-				return T, nil
-			}
-			return nil, errors.New("could not find '" + P + "' in object")
-		}
-		add_parent_and_path(val, T, path_str)
-		if len(paths) == IDX+1 {
-			return val, nil
-		}
-		ret, err := get_by_path(IDX+1, paths, val)
+		elems, err := get_from_smap_by_path(IDX, paths, T)
 		if err != nil {
-			return nil, errors.Wrapf(err, "from object "+P)
+			return nil, errors.Wrap(err, "while extracting path from smap in get_by_path")
 		}
-		return ret, nil
+		return elems, nil
 
 	case map[interface{}]interface{}:
-		val, ok := T[P]
-		if !ok {
-			// try to look up by name
-			name_value, ok := T["name"]
-			if ok && name_value == P {
-				return T, nil
-			}
-			return nil, errors.New("could not find '" + P + "' in object")
-		}
-		add_parent_and_path(val, T, path_str)
-		if len(paths) == IDX+1 {
-			return val, nil
-		}
-		ret, err := get_by_path(IDX+1, paths, val)
+		elems, err := get_from_imap_by_path(IDX, paths, T)
 		if err != nil {
-			return nil, errors.Wrapf(err, "from object "+P)
+			return nil, errors.Wrap(err, "while extracting path from imap in get_by_path")
 		}
-		return ret, nil
+		return elems, nil
 
 	case []interface{}:
 		logger.Info("Processing Slice", "paths", paths, "T", T)
-		subs := []interface{}{}
+		elems, err := get_from_slice_by_path(IDX, paths, T)
+		if err != nil {
+			return nil, errors.Wrap(err, "while extracting path from slice")
+		}
 		if len(paths) == IDX+1 {
-			for _, elem := range T {
-				logger.Info("    - elem", "elem", elem, "paths", paths, "P", P, "elem", elem)
-				switch V := elem.(type) {
-
-				case map[string]interface{}:
-					logger.Debug("        map[string]")
-					val, ok := V[P]
-					if !ok {
-						// try to look up by name
-						name_value, ok := V["name"]
-						if ok && name_value == P {
-							return T, nil
-						}
-						logger.Debug("could not find '" + P + "' in object")
-						continue
-					}
-
-					// accumulate based on type (slice or not)
-					switch a_val := val.(type) {
-
-					case []interface{}:
-						logger.Debug("Adding vals", "val", a_val)
-						subs = append(subs, a_val...)
-
-					default:
-						logger.Debug("Adding val", "val", a_val)
-						subs = append(subs, a_val)
-					}
-
-				case map[interface{}]interface{}:
-					logger.Debug("        map[iface]", "P", P, "V", V, "paths", paths)
-					val, ok := V[P]
-					if !ok {
-						// try to look up by name
-						name_value, ok := V["name"]
-						if ok && name_value == P {
-							return T, nil
-						}
-						logger.Debug("could not find '" + P + "' in object")
-						continue
-					}
-
-					// accumulate based on type (slice or not)
-					switch a_val := val.(type) {
-
-					case []interface{}:
-						logger.Debug("Adding vals", "val", a_val)
-						subs = append(subs, a_val...)
-
-					default:
-						logger.Debug("Adding val", "val", a_val)
-						subs = append(subs, a_val)
-					}
-
-				default:
-					str := fmt.Sprintf("%+v", reflect.TypeOf(V))
-					return nil, errors.New("element not an object type: " + str)
-
-				}
-			}
+			return elems, nil
 		} else {
-			for _, elem := range T {
-				val, err := get_by_path(IDX, paths, elem)
-				if err != nil {
-					// in this case, only some of the sub.paths.elements may be found
-					// this err path should be expanded to check for geb error types
-					logger.Debug(err.Error())
-					continue
+			switch E := elems.(type) {
+			case []interface{}:
+				ees := []interface{}{}
+				for _, e := range E {
+					ee, eerr := get_by_path(IDX+1, paths, e)
+					if eerr == nil {
+						ees = append(ees, ee)
+					}
 				}
-				switch V := val.(type) {
-
-				case []interface{}:
-					logger.Debug("Adding vals", "val", V)
-					subs = append(subs, V...)
-
-				default:
-					logger.Debug("Adding val", "val", V)
-					subs = append(subs, V)
-
-				}
+				return ees, nil
+			default:
+				return get_by_path(IDX+1, paths, elems)
 			}
 		}
-
-		return subs, nil
 
 	default:
 		str := fmt.Sprintf("%+v", reflect.TypeOf(data))

@@ -3,14 +3,81 @@ data:
   array:
     - name: elemA
       value: foo
+      subobject:
+        name: mysubobject
+        field1: value1
+        field2: value2
+        array:
+          - name: elemA
+            value: foo
+          - name: elemB
+            value: goo
+          - name: elemC
+            value: hoo
+          - name: other
+            value: thing
     - name: elemB
       value: goo
+      subobject:
+        name: mysubobject
+        field1: value1
+        field2: value2
+        array:
+          - name: elemA
+            value: foo
+          - name: elemB
+            value: goo
+          - name: elemC
+            value: hoo
+          - name: other
+            value: thing
     - name: elemC
       value: hoo
+      subobject:
+        name: mysubobject
+        field1: value1
+        field2: value2
+        array:
+          - name: elemA
+            value: foo
+          - name: elemB
+            value: goo
+          - name: elemC
+            value: hoo
+          - name: other
+            value: thing
+    - name: other
+      value: thing
+      subobject:
+        name: mysubobject
+        field1: value1
+        field2: value2
+        array:
+          - name: elemA
+            value: foo
+          - name: elemB
+            value: goo
+          - name: elemC
+            value: hoo
+          - name: other
+            value: thing
   object:
     name: myobject
     field1: value1
     field2: value2
+    subobject:
+      name: mysubobject
+      field1: value1
+      field2: value2
+      array:
+        - name: elemA
+          value: foo
+        - name: elemB
+          value: goo
+        - name: elemC
+          value: hoo
+        - name: other
+          value: thing
     list:
       - name: u
         value: -1

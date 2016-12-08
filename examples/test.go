@@ -57,15 +57,19 @@ func test_yaml() {
 		"data.object.list.x",
 		"data.object.list.[:2]",
 		"data.object.list.[2]",
-		"data.object.list.2",
 		"data.object.list.[2:]",
 		"data.object.list.[:]",
-		"data.object.list.[value==0]",
-		"data.object.list.[value!=0]",
-		"data.object.list.[value>0]",
-		"data.object.list.[value>=0]",
-		"data.object.list.[value<0]",
-		"data.object.list.[value<=0]",
+		"data.object.list.[]", // should fail
+		// "data.object.list.[value==0]",
+		// "data.object.list.[value!=0]",
+		// "data.object.list.[value>0]",
+		// "data.object.list.[value>=0]",
+		// "data.object.list.[value<0]",
+		// "data.object.list.[value<=0]",
+		"data.array.[:].subobject",
+		"data.array.[:].subobject.array",
+		"data.array.[:].subobject.array.[value==foo]",
+		"data.array.[name==elemB,elemC].subobject.array.[elemA,elemC]",
 	}
 
 	for _, path := range paths {
