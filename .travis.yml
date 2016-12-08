@@ -7,5 +7,5 @@ go:
 install: true
 
 script:
-  - cd examples && go run test.go
+  - cd ${TRAVIS_BUILD_DIR}/examples && go run test.go
 
