@@ -5,9 +5,10 @@ go:
   - 1.7.x
 
 install:
-  - export PATH=$PATH:$HOME/gopath/bin
   - go get github.com/tools/godep
-  - godep restore
+  - godep version
+  - godep help
+  - godep -v restore
 
 script:
   - cd ${TRAVIS_BUILD_DIR}/examples && go run test.go
