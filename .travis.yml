@@ -4,7 +4,8 @@ go:
   - 1.6
   - 1.7.x
 
-install: true
+install:
+  - godep restore
 
 script:
   - cd ${TRAVIS_BUILD_DIR}/examples && go run test.go
