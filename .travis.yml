@@ -5,6 +5,8 @@ go:
   - 1.7.x
 
 install:
+  - export PATH=$PATH:$HOME/gopath/bin
+  - go get github.com/tools/godep
   - godep restore
 
 script:
