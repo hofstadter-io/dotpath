@@ -15,6 +15,10 @@ func init() {
 	config_logger("warn")
 }
 
+func SetLogger(l log.Logger) {
+	logger = l
+}
+
 func SetLogLevel(level string) {
 	config_logger(level)
 }
@@ -85,12 +89,6 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 		"has_le", has_le, "has_lt", has_lt,
 	)
 
-	inner := ""
-	if lpos_index > -1 {
-		inner = P[lpos_index+1 : rpos_index]
-	}
-	fmt.Printf("inner: %d %q %q\n", IDX, inner, P)
-
 	switch T := data.(type) {
 
 	case map[string]interface{}:
@@ -98,12 +96,18 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 		if err != nil {
 			return nil, errors.Wrap(err, "while extracting path from smap in get_by_path")
 		}
+		if E, ok := elems.([]interface{}); ok && len(E) == 0 {
+			return E[0], nil
+		}
 		return elems, nil
 
 	case map[interface{}]interface{}:
 		elems, err := get_from_imap_by_path(IDX, paths, T)
 		if err != nil {
 			return nil, errors.Wrap(err, "while extracting path from imap in get_by_path")
+		}
+		if E, ok := elems.([]interface{}); ok && len(E) == 0 {
+			return E[0], nil
 		}
 		return elems, nil
 
@@ -125,14 +129,88 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 						ees = append(ees, ee)
 					}
 				}
+				if len(ees) == 1 {
+					return ees[0], nil
+				}
 				return ees, nil
 			default:
-				return get_by_path(IDX+1, paths, elems)
+				ees, eerr := get_by_path(IDX+1, paths, elems)
+				if eerr != nil {
+					return nil, errors.Wrap(eerr, "while extracting path from slice in default")
+				}
+				if E, ok := ees.([]interface{}); ok && len(E) == 0 {
+					return E[0], nil
+				}
+				return ees, nil
 			}
 		}
 
 	default:
-		str := fmt.Sprintf("%+v", reflect.TypeOf(data))
+		typ := reflect.TypeOf(data)
+		if typ.Kind() == reflect.Ptr {
+			d := reflect.ValueOf(data)
+			data = reflect.Indirect(d).Interface()
+			typ = reflect.TypeOf(data)
+			logger.Info("pointer dereference", "data", data, "type", typ, "d", d)
+		}
+
+		switch typ.Kind() {
+		case reflect.Map:
+			M := reflect.ValueOf(data)
+			logger.Info("Map: ", "map", M, "type", typ)
+			v := M.MapIndex(reflect.ValueOf(P))
+			if IDX+1 >= len(paths) {
+				return v.Interface(), nil
+			}
+
+			ees, eerr := get_by_path(IDX+1, paths, v.Interface())
+			if eerr != nil {
+				return nil, errors.Wrap(eerr, "while extracting path from slice in default")
+			}
+			if E, ok := ees.([]interface{}); ok && len(E) == 0 {
+				return E[0], nil
+			}
+			return ees, nil
+
+		case reflect.Slice:
+			S := reflect.ValueOf(data)
+			logger.Info("Slice: ", "slice", S, "type", typ)
+			if IDX+1 >= len(paths) {
+				return S.Interface(), nil
+			}
+			ees, eerr := get_by_path(IDX+1, paths, S.Interface())
+			if eerr != nil {
+				return nil, errors.Wrap(eerr, "while extracting path from slice in default")
+			}
+			if E, ok := ees.([]interface{}); ok && len(E) == 0 {
+				return E[0], nil
+			}
+			return ees, nil
+
+		case reflect.Struct:
+
+			S := reflect.ValueOf(data)
+			logger.Info("Struct: ", "struct", S, "type", typ)
+			F := S.FieldByName(P)
+			if IDX+1 >= len(paths) {
+				return F.Interface(), nil
+			}
+
+			ees, eerr := get_by_path(IDX+1, paths, F.Interface())
+			if eerr != nil {
+				return nil, errors.Wrap(eerr, "while extracting path from slice in default")
+			}
+			if E, ok := ees.([]interface{}); ok && len(E) == 0 {
+				return E[0], nil
+			}
+			return ees, nil
+
+		default:
+			str := fmt.Sprintf("%+v", typ)
+			return nil, errors.New("unknown data object type: " + str)
+
+		}
+		str := fmt.Sprintf("%+v", typ)
 		return nil, errors.New("unknown data object type: " + str)
 
 	} // END of type switch

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-func extract_from_slice_with_splice(splice string, data []interface{}) ([]interface{}, error) {
+func extract_from_slice_with_splice(splice string, data []interface{}) (interface{}, error) {
 
 	// handle slicing
 	fields := strings.Split(splice, ":")
@@ -29,7 +29,7 @@ func extract_from_slice_with_splice(splice string, data []interface{}) ([]interf
 		}
 	}
 
-	fmt.Println("L,R: ", l, r, data)
+	// fmt.Println("L,R: ", l, r, data)
 
 	// do things based on positions
 	if l > -1 && r > -1 {
@@ -42,7 +42,7 @@ func extract_from_slice_with_splice(splice string, data []interface{}) ([]interf
 	return data, nil
 }
 
-func extract_from_slice_with_name(listing string, data []interface{}) ([]interface{}, error) {
+func extract_from_slice_with_name(listing string, data []interface{}) (interface{}, error) {
 
 	ret := []interface{}{}
 	// separate listing
@@ -77,7 +77,7 @@ func extract_from_slice_with_name(listing string, data []interface{}) ([]interfa
 	return ret, nil
 }
 
-func extract_from_slice_with_field(field, value string, data []interface{}) ([]interface{}, error) {
+func extract_from_slice_with_field(field, value string, data []interface{}) (interface{}, error) {
 
 	ret := []interface{}{}
 	// separate listing
@@ -111,7 +111,7 @@ func extract_from_slice_with_field(field, value string, data []interface{}) ([]i
 	return ret, nil
 }
 
-func extract_listing_from_map_string(listing string, data map[string]interface{}) ([]interface{}, error) {
+func extract_listing_from_map_string(listing string, data map[string]interface{}) (interface{}, error) {
 
 	ret := []interface{}{}
 	// separate listing
@@ -128,7 +128,7 @@ func extract_listing_from_map_string(listing string, data map[string]interface{}
 	return ret, nil
 }
 
-func extract_listing_from_map_iface(listing string, data map[interface{}]interface{}) ([]interface{}, error) {
+func extract_listing_from_map_iface(listing string, data map[interface{}]interface{}) (interface{}, error) {
 
 	ret := []interface{}{}
 	// separate listing
@@ -208,6 +208,8 @@ func extract_from_map_by_value(field interface{}, value string, data interface{}
 	default:
 		return nil, errors.New("data arg is not a map type")
 	}
+
+	fmt.Println("RETTTTTT:", ret)
 
 	if len(ret) == 1 {
 		return ret[0], nil

@@ -37,6 +37,8 @@ func test_yaml() {
 	paths := []string{
 		"data.key",
 		"data.array",
+		"data.array.subarray",
+		"data.array.[:].subarray",
 		"data.array.elemA",
 		"data.array.[elemA]",
 		"data.array.[elemA,elemB]",

@@ -1,7 +1,6 @@
 package dotpath
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -23,7 +22,7 @@ func get_from_smap_by_path(IDX int, paths []string, data map[string]interface{})
 	if lpos_index > -1 {
 		inner = P[lpos_index+1 : rpos_index]
 	}
-	fmt.Printf("  smap inner: %d %q %q\n", IDX, inner, P)
+	// fmt.Printf("  smap inner: %d %q %q\n", IDX, inner, P)
 
 	// handle map indexing
 	if inner != "" {
@@ -112,7 +111,7 @@ func get_from_imap_by_path(IDX int, paths []string, data map[interface{}]interfa
 	if lpos_index > -1 {
 		inner = P[lpos_index+1 : rpos_index]
 	}
-	fmt.Printf("  imap inner: %d %q %q\n", IDX, inner, P)
+	// fmt.Printf("  imap inner: %d %q %q\n", IDX, inner, P)
 
 	// handle map indexing
 	if inner != "" {

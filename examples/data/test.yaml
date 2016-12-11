@@ -3,6 +3,15 @@ data:
   array:
     - name: elemA
       value: foo
+      subarray:
+        - name: elemA
+          value: foo
+        - name: elemB
+          value: goo
+        - name: elemC
+          value: hoo
+        - name: other
+          value: thing
       subobject:
         name: mysubobject
         field1: value1
@@ -18,6 +27,15 @@ data:
             value: thing
     - name: elemB
       value: goo
+      subarray:
+        - name: elemA
+          value: foo
+        - name: elemB
+          value: goo
+        - name: elemC
+          value: hoo
+        - name: other
+          value: thing
       subobject:
         name: mysubobject
         field1: value1
@@ -33,21 +51,27 @@ data:
             value: thing
     - name: elemC
       value: hoo
+      subarray:
+        - name: elemA
+          value: foo
+        - name: elemB
+          value: goo
+        - name: elemC
+          value: hoo
+        - name: other
+          value: thing
       subobject:
         name: mysubobject
         field1: value1
         field2: value2
         array:
-          - name: elemA
-            value: foo
-          - name: elemB
-            value: goo
-          - name: elemC
-            value: hoo
           - name: other
             value: thing
     - name: other
       value: thing
+      subarray:
+        - name: other
+          value: thing
       subobject:
         name: mysubobject
         field1: value1
