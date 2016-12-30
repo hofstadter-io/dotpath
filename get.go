@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/spf13/viper"
 	log "gopkg.in/inconshreveable/log15.v2" // logging framework
 )
 
@@ -16,7 +17,26 @@ func init() {
 }
 
 func SetLogger(l log.Logger) {
-	logger = l
+	lcfg := viper.GetStringMap("log-config.dotpath.default")
+
+	if lcfg == nil || len(lcfg) == 0 {
+		logger = l
+	} else {
+		level_str := lcfg["level"].(string)
+		stack := lcfg["stack"].(bool)
+		level, err := log.LvlFromString(level_str)
+		if err != nil {
+			panic(err)
+		}
+
+		termlog := log.LvlFilterHandler(level, log.StdoutHandler)
+		if stack {
+			term_stack := log.CallerStackHandler("%+v", log.StdoutHandler)
+			termlog = log.LvlFilterHandler(level, term_stack)
+		}
+
+		logger.SetHandler(termlog)
+	}
 }
 
 func SetLogLevel(level string) {
@@ -30,33 +50,59 @@ func config_logger(level string) {
 		panic(err)
 	}
 
+	term_stack := log.CallerStackHandler("%+v", log.StdoutHandler)
+	term_caller := log.CallerFuncHandler(log.CallerFileHandler(term_stack))
+	termlog := log.LvlFilterHandler(term_level, term_caller)
+
 	/*
-		term_stack := log.CallerStackHandler("%+v", log.StdoutHandler)
-		term_caller := log.CallerFuncHandler(log.CallerFileHandler(term_stack))
+		term_caller := log.CallerFuncHandler(log.CallerFileHandler(log.StdoutHandler))
 		termlog := log.LvlFilterHandler(term_level, term_caller)
 	*/
-
-	term_caller := log.CallerFuncHandler(log.CallerFileHandler(log.StdoutHandler))
-	termlog := log.LvlFilterHandler(term_level, term_caller)
 
 	//	termlog := log.LvlFilterHandler(term_level, log.StdoutHandler)
 	logger.SetHandler(termlog)
 
 }
 
-func Get(path string, data interface{}) (interface{}, error) {
+func Get(path string, data interface{}, no_solo_array bool) (interface{}, error) {
 	paths := strings.Split(path, ".")
 	if len(paths) < 1 {
 		return nil, errors.New("Bad path supplied: " + path)
 	}
+	if strings.Contains(paths[0], ":") {
+		pos := strings.Index(paths[0], ":")
+		paths[0] = paths[0][pos+1:]
+	}
 
 	// fmt.Println("GETPATH:", path, paths, data)
 
-	return get_by_path(0, paths, data)
+	ret, err := get_by_path(0, paths, data)
+	if err != nil {
+		return nil, err
+	}
+	if T, ok := ret.([]interface{}); ok {
+		if no_solo_array && len(T) == 1 {
+			return T[0], nil
+		}
+	}
+	return ret, nil
 }
 
-func GetByPathSlice(path []string, data interface{}) (interface{}, error) {
-	return get_by_path(0, path, data)
+func GetByPathSlice(path []string, data interface{}, no_solo_array bool) (interface{}, error) {
+	if strings.Contains(path[0], ":") {
+		pos := strings.Index(path[0], ":")
+		path[0] = path[0][pos+1:]
+	}
+	ret, err := get_by_path(0, path, data)
+	if err != nil {
+		return nil, err
+	}
+	if T, ok := ret.([]interface{}); ok {
+		if no_solo_array && len(T) == 1 {
+			return T[0], nil
+		}
+	}
+	return ret, nil
 }
 
 func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error) {
@@ -96,9 +142,9 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 		if err != nil {
 			return nil, errors.Wrap(err, "while extracting path from smap in get_by_path")
 		}
-		if E, ok := elems.([]interface{}); ok && len(E) == 0 {
-			return E[0], nil
-		}
+		// if E, ok := elems.([]interface{}); ok && len(E) == 1 {
+		// 	return E[0], nil
+		// }
 		return elems, nil
 
 	case map[interface{}]interface{}:
@@ -106,9 +152,9 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 		if err != nil {
 			return nil, errors.Wrap(err, "while extracting path from imap in get_by_path")
 		}
-		if E, ok := elems.([]interface{}); ok && len(E) == 0 {
-			return E[0], nil
-		}
+		// if E, ok := elems.([]interface{}); ok && len(E) == 1 {
+		// 	return E[0], nil
+		// }
 		return elems, nil
 
 	case []interface{}:
@@ -138,9 +184,9 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 				if eerr != nil {
 					return nil, errors.Wrap(eerr, "while extracting path from slice in default")
 				}
-				if E, ok := ees.([]interface{}); ok && len(E) == 0 {
-					return E[0], nil
-				}
+				//if E, ok := ees.([]interface{}); ok && len(E) == 1 {
+				//	return E[0], nil
+				//}
 				return ees, nil
 			}
 		}
@@ -167,9 +213,9 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 			if eerr != nil {
 				return nil, errors.Wrap(eerr, "while extracting path from slice in default")
 			}
-			if E, ok := ees.([]interface{}); ok && len(E) == 0 {
-				return E[0], nil
-			}
+			// if E, ok := ees.([]interface{}); ok && len(E) == 1 {
+			// 	return E[0], nil
+			// }
 			return ees, nil
 
 		case reflect.Slice:
@@ -182,9 +228,9 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 			if eerr != nil {
 				return nil, errors.Wrap(eerr, "while extracting path from slice in default")
 			}
-			if E, ok := ees.([]interface{}); ok && len(E) == 0 {
-				return E[0], nil
-			}
+			// if E, ok := ees.([]interface{}); ok && len(E) == 1 {
+			// 	return E[0], nil
+			// }
 			return ees, nil
 
 		case reflect.Struct:
@@ -200,9 +246,9 @@ func get_by_path(IDX int, paths []string, data interface{}) (interface{}, error)
 			if eerr != nil {
 				return nil, errors.Wrap(eerr, "while extracting path from slice in default")
 			}
-			if E, ok := ees.([]interface{}); ok && len(E) == 0 {
-				return E[0], nil
-			}
+			// if E, ok := ees.([]interface{}); ok && len(E) == 1 {
+			// 	return E[0], nil
+			// }
 			return ees, nil
 
 		default:

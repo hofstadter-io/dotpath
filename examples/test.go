@@ -16,7 +16,7 @@ func main() {
 
 	//	dotpath.SetLogLevel("debug")
 
-	test_yaml()
+	test_array()
 
 }
 
@@ -78,6 +78,40 @@ func test_yaml() {
 
 		fmt.Printf("@%s:\n", path)
 		d, err := dotpath.Get(path, data)
+		if err != nil {
+			fmt.Println("ERROR:", err, "\n\n")
+			continue
+		}
+		fmt.Printf("%# v\n\n", pretty.Formatter(d))
+	}
+
+}
+
+func test_array() {
+	fmt.Println("Testing yaml array")
+
+	data, err := read_yaml("data/array.yaml")
+	if err != nil {
+		fmt.Println("Error:", err)
+	}
+	fmt.Printf("data:\n%# v\n\n", pretty.Formatter(data))
+	M := data.(map[string]interface{})
+
+	paths := []string{
+		"elemA",
+		// "array.elemA",
+		// "array.[elemA]",
+		// "array.[elemA,elemB]",
+		// "array.[name==elemB]",
+		// "array.[name==elemB,elemC]",
+		// "array.[value==foo]",
+		// "array.[value==foo,goo]",
+	}
+
+	for _, path := range paths {
+
+		fmt.Printf("@%s:\n", path)
+		d, err := dotpath.Get(path, M["array"])
 		if err != nil {
 			fmt.Println("ERROR:", err, "\n\n")
 			continue
