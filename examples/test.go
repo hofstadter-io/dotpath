@@ -8,7 +8,7 @@ import (
 	"github.com/kr/pretty"
 	"gopkg.in/yaml.v1"
 
-	"github.ibm.com/hofstadter-io/dotpath"
+	"github.com/hofstadter-io/dotpath"
 )
 
 func main() {
