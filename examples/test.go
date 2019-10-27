@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 
+	"github.com/pkg/errors"
+
 	"github.com/kr/pretty"
-	"gopkg.in/yaml.v1"
+	"gopkg.in/yaml.v2"
 
 	"github.com/hofstadter-io/dotpath"
 )
